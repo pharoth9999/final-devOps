@@ -1,0 +1,77 @@
+---
+- name: Deploy and verify the ID Card Manager web server
+  hosts: webserver
+  gather_facts: false
+  vars:
+    project_dir: /build
+    mysql_db: "A-ThyPharoth-db"
+    mysql_user: root
+    mysql_password: "Hello@123"
+    backup_dir: /backup
+    local_backup_dir: ../backups
+
+  tasks:
+    - name: Check for local (uncommitted) changes in the repo
+      ansible.builtin.command:
+        cmd: git status --porcelain
+        chdir: "{{ project_dir }}"
+      register: git_status
+      changed_when: false
+
+    - name: Fail if there are local changes (must be clean to pull)
+      ansible.builtin.fail:
+        msg: "Local changes detected in {{ project_dir }} — commit, stash, or discard them before pulling."
+      when: git_status.stdout | length > 0
+
+    - name: Run git pull
+      ansible.builtin.command:
+        cmd: git pull
+        chdir: "{{ project_dir }}"
+      register: git_pull
+      changed_when: "'Already up to date' not in git_pull.stdout"
+
+    - name: Show git pull result
+      ansible.builtin.debug:
+        var: git_pull.stdout
+
+    - name: Build the project with Maven
+      ansible.builtin.command:
+        cmd: mvn -q -DskipTests clean package
+        chdir: "{{ project_dir }}"
+      register: mvn_build
+
+    - name: Run tests (against SQLite test database)
+      ansible.builtin.command:
+        cmd: mvn -q test
+        chdir: "{{ project_dir }}"
+      register: mvn_test
+
+    - name: Show test result
+      ansible.builtin.debug:
+        msg: "Tests completed (return code {{ mvn_test.rc }})"
+
+    - name: Ensure backup directory exists
+      ansible.builtin.file:
+        path: "{{ backup_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Backup the MySQL database (prod DB, via the docker network)
+      ansible.builtin.shell: >
+        mysqldump -h mysql -u {{ mysql_user }} -p{{ mysql_password }}
+        {{ mysql_db | quote }} > {{ backup_dir }}/{{ mysql_db }}-$(date +%Y%m%d%H%M%S).sql
+      register: backup_result
+
+    - name: Find the backup file just created
+      ansible.builtin.find:
+        paths: "{{ backup_dir }}"
+        patterns: "*.sql"
+        age: "-5m"
+      register: backup_files
+
+    - name: Fetch the backup file back to the control machine
+      ansible.builtin.fetch:
+        src: "{{ backup_files.files[0].path }}"
+        dest: "{{ local_backup_dir }}/"
+        flat: true
+      when: backup_files.files | length > 0
