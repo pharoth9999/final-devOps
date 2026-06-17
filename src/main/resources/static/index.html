@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>ID Card Manager</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; background: #f9fafb; }
+  .form-pane { width: 380px; padding: 20px; overflow-y: auto; border-right: 1px solid #e5e7eb; background: #fff; }
+  .preview-pane { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 30px; }
+  h2 { margin-top: 0; }
+  label { display: block; font-size: 12px; font-weight: 600; margin: 10px 0 4px; color: #374151; }
+  input, select { width: 100%; box-sizing: border-box; padding: 7px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; }
+  button { margin-top: 14px; padding: 9px 12px; border: none; border-radius: 6px; background: #1d4ed8; color: #fff; font-weight: 600; cursor: pointer; width: 100%; }
+  button.secondary { background: #6b7280; }
+  #preview-frame { width: 380px; height: 600px; border: none; }
+  #status { font-size: 12px; color: #16a34a; margin-top: 8px; min-height: 16px; }
+</style>
+</head>
+<body>
+<div class="form-pane">
+  <h2>New ID Card</h2>
+  <form id="profile-form">
+    <label>Type</label>
+    <select id="type">
+      <option value="STUDENT">STUDENT</option>
+      <option value="EMPLOYEE">EMPLOYEE</option>
+      <option value="USER">USER</option>
+    </select>
+    <label>Full name</label>
+    <input id="fullName" placeholder="Jane Doe"/>
+    <label>Department</label>
+    <input id="department" placeholder="Engineering"/>
+    <label>Title / Class</label>
+    <input id="title" placeholder="Software Engineer"/>
+    <label>Email</label>
+    <input id="email" placeholder="jane@example.com"/>
+    <label>Phone</label>
+    <input id="phone" placeholder="+1 555 0100"/>
+    <label>Blood group</label>
+    <input id="bloodGroup" placeholder="O+"/>
+    <label>Barcode type</label>
+    <select id="barcodeType">
+      <option value="CODE_128">CODE_128</option>
+      <option value="EAN_13">EAN_13</option>
+    </select>
+    <button type="button" id="save-btn">Save profile &amp; generate card</button>
+    <button type="button" id="pdf-btn" class="secondary" disabled>Download PDF</button>
+  </form>
+  <div id="status"></div>
+</div>
+<div class="preview-pane">
+  <iframe id="preview-frame" title="ID card preview"></iframe>
+</div>
+
+<script>
+const frame = document.getElementById('preview-frame');
+const statusEl = document.getElementById('status');
+const pdfBtn = document.getElementById('pdf-btn');
+let savedProfileId = null;
+
+function currentDraft() {
+  return {
+    type: document.getElementById('type').value,
+    fullName: document.getElementById('fullName').value,
+    department: document.getElementById('department').value,
+    title: document.getElementById('title').value,
+    email: document.getElementById('email').value,
+    phone: document.getElementById('phone').value,
+    bloodGroup: document.getElementById('bloodGroup').value,
+    barcodeType: document.getElementById('barcodeType').value
+  };
+}
+
+let debounceTimer;
+async function renderPreview() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    const res = await fetch('/api/profiles/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentDraft())
+    });
+    const html = await res.text();
+    frame.srcdoc = html;
+  }, 250);
+}
+
+document.getElementById('profile-form').addEventListener('input', renderPreview);
+
+document.getElementById('save-btn').addEventListener('click', async () => {
+  const res = await fetch('/api/profiles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(currentDraft())
+  });
+  if (!res.ok) {
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = 'Failed to save profile.';
+    return;
+  }
+  const saved = await res.json();
+  savedProfileId = saved.id;
+  statusEl.style.color = '#16a34a';
+  statusEl.textContent = 'Saved as ' + saved.registrationNumber;
+  pdfBtn.disabled = false;
+  frame.src = '/api/profiles/' + savedProfileId + '/preview';
+});
+
+pdfBtn.addEventListener('click', () => {
+  if (savedProfileId) {
+    window.open('/api/profiles/' + savedProfileId + '/pdf', '_blank');
+  }
+});
+
+renderPreview();
+</script>
+</body>
+</html>
