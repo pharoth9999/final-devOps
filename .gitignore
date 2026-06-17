@@ -34,3 +34,7 @@ build/
 
 ### App uploads ###
 uploads/
+
+### Ansible secrets ###
+ansible/id_ansible
+backups/

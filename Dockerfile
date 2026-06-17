@@ -8,13 +8,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         nginx \
         openssh-server \
         php-cli \
+        python3 \
+        default-mysql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# --- SSH (root login, password auth) ---
+# --- SSH (root login, password auth for humans + key auth for Ansible) ---
 RUN mkdir -p /var/run/sshd \
     && echo 'root:Hello@123' | chpasswd \
     && sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
-    && sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+    && sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config \
+    && mkdir -p /root/.ssh && chmod 700 /root/.ssh
+COPY ansible/id_ansible.pub /root/.ssh/authorized_keys
+RUN chmod 600 /root/.ssh/authorized_keys
 
 # --- NGINX reverse proxy (8080 -> 127.0.0.1:8081) ---
 COPY docker/nginx.conf /etc/nginx/nginx.conf

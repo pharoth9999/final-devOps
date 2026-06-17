@@ -4,6 +4,7 @@ import com.example.demo.model.BarcodeType;
 import com.example.demo.model.Profile;
 import com.example.demo.model.ProfileType;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
 
@@ -12,6 +13,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class ProfileRepositoryTest {
 
     @org.springframework.beans.factory.annotation.Autowired
