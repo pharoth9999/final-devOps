@@ -23,7 +23,7 @@ class TemplateRepositoryTest {
                 .organizationName("Acme University")
                 .build());
 
-        assertThat(templateRepository.findByCode("CLASSIC")).isEmpty(); // TEMP: intentional failure to test Jenkins failure-email path
+        assertThat(templateRepository.findByCode("CLASSIC")).isPresent();
         assertThat(templateRepository.existsByCode("CLASSIC")).isTrue();
         assertThat(templateRepository.existsByCode("UNKNOWN")).isFalse();
     }
