@@ -13,11 +13,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # --- SSH (root login, password auth for humans + key auth for Ansible) ---
+# Dockerfile ENV vars (JAVA_HOME, PATH) aren't inherited by SSH sessions, so
+# bake them into /etc/environment, which PAM applies to every session.
 RUN mkdir -p /var/run/sshd \
     && echo 'root:Hello@123' | chpasswd \
     && sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
     && sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config \
-    && mkdir -p /root/.ssh && chmod 700 /root/.ssh
+    && mkdir -p /root/.ssh && chmod 700 /root/.ssh \
+    && echo "JAVA_HOME=${JAVA_HOME}" >> /etc/environment \
+    && echo "PATH=${PATH}" >> /etc/environment
 COPY ansible/id_ansible.pub /root/.ssh/authorized_keys
 RUN chmod 600 /root/.ssh/authorized_keys
 
