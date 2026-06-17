@@ -43,6 +43,8 @@
       <option value="CODE_128">CODE_128</option>
       <option value="EAN_13">EAN_13</option>
     </select>
+    <label>Photo</label>
+    <input type="file" id="photo" accept="image/jpeg,image/png"/>
     <button type="button" id="save-btn">Save profile &amp; generate card</button>
     <button type="button" id="pdf-btn" class="secondary" disabled>Download PDF</button>
   </form>
@@ -100,9 +102,29 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   }
   const saved = await res.json();
   savedProfileId = saved.id;
+
+  const photoInput = document.getElementById('photo');
+  if (photoInput.files.length > 0) {
+    const formData = new FormData();
+    formData.append('file', photoInput.files[0]);
+    const photoRes = await fetch('/api/profiles/' + savedProfileId + '/photo', {
+      method: 'POST',
+      body: formData
+    });
+    if (!photoRes.ok) {
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = 'Profile saved but photo upload failed.';
+      pdfBtn.disabled = false;
+      frame.removeAttribute('srcdoc');
+      frame.src = '/api/profiles/' + savedProfileId + '/preview';
+      return;
+    }
+  }
+
   statusEl.style.color = '#16a34a';
   statusEl.textContent = 'Saved as ' + saved.registrationNumber;
   pdfBtn.disabled = false;
+  frame.removeAttribute('srcdoc');
   frame.src = '/api/profiles/' + savedProfileId + '/preview';
 });
 

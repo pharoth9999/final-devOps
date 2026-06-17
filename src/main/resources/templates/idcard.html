@@ -9,20 +9,24 @@
         .card-header { padding: 16px 18px; color: #ffffff; }
         .card-header .org { font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
         .card-header .tagline { font-size: 11px; opacity: .9; margin-top: 2px; }
-        .card-body { padding: 18px; display: flex; gap: 14px; }
-        .photo { width: 96px; height: 116px; border-radius: 8px; object-fit: cover; border: 2px solid #e5e7eb; background: #e5e7eb; }
-        .photo-placeholder { width: 96px; height: 116px; border-radius: 8px; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 11px; text-align: center; }
-        .details { flex: 1; }
+        .card-body { padding: 18px; overflow: hidden; }
+        .photo { box-sizing: border-box; float: left; margin-right: 14px; width: 96px; height: 116px; border-radius: 8px; border: 2px solid #e5e7eb; background-color: #e5e7eb; background-size: cover; background-position: center; }
+        .photo-placeholder { box-sizing: border-box; float: left; margin-right: 14px; width: 96px; height: 116px; border-radius: 8px; border: 2px dashed #cbd5e1; color: #94a3b8; font-size: 11px; text-align: center; padding-top: 50px; }
+        .details { overflow: hidden; }
         .full-name { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
         .reg-number { font-size: 12px; font-weight: 600; margin: 0 0 8px; }
         .field { font-size: 11px; margin: 2px 0; color: #374151; }
         .field b { color: #111827; }
         .badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; margin-bottom: 6px; }
-        .codes { display: flex; align-items: center; justify-content: space-between; padding: 0 18px 16px; }
-        .codes img { display: block; }
+        .codes { display: table; width: 100%; padding: 0 18px 16px; box-sizing: border-box; }
+        .codes .code-cell { display: table-cell; vertical-align: middle; }
+        .codes .code-cell.right { text-align: right; }
+        .codes img { display: inline-block; }
         .qr { width: 76px; height: 76px; }
         .barcode { height: 46px; max-width: 190px; }
-        .footer { padding: 8px 18px 16px; font-size: 10px; color: #6b7280; display: flex; justify-content: space-between; }
+        .footer { padding: 8px 18px 16px; font-size: 10px; color: #6b7280; display: table; width: 100%; box-sizing: border-box; }
+        .footer .foot-cell { display: table-cell; }
+        .footer .foot-cell.right { text-align: right; }
     </style>
 </head>
 <body>
@@ -34,7 +38,7 @@
             <div class="tagline" th:text="${t.tagline}">Official Identification Card</div>
         </div>
         <div class="card-body">
-            <img th:if="${card.photoBase64}" class="photo" th:src="${card.photoBase64}" alt="photo"/>
+            <div th:if="${card.photoBase64}" class="photo" th:style="'background-image: url(' + ${card.photoBase64} + ');'"></div>
             <div th:unless="${card.photoBase64}" class="photo-placeholder">No Photo</div>
             <div class="details">
                 <span class="badge" th:text="${p.type}"
@@ -49,12 +53,12 @@
             </div>
         </div>
         <div class="codes">
-            <img th:if="${card.barcodeBase64}" class="barcode" th:src="${card.barcodeBase64}" alt="barcode"/>
-            <img th:if="${card.qrBase64}" class="qr" th:src="${card.qrBase64}" alt="qr"/>
+            <div class="code-cell"><img th:if="${card.barcodeBase64}" class="barcode" th:src="${card.barcodeBase64}" alt="barcode"/></div>
+            <div class="code-cell right"><img th:if="${card.qrBase64}" class="qr" th:src="${card.qrBase64}" alt="qr"/></div>
         </div>
         <div class="footer">
-            <span th:text="${p.uuid}">uuid</span>
-            <span>Scan to verify</span>
+            <span class="foot-cell" th:text="${p.uuid}">uuid</span>
+            <span class="foot-cell right">Scan to verify</span>
         </div>
     </div>
 </div>
