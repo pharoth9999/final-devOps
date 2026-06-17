@@ -1,14 +1,43 @@
 services:
+  web:
+    build: .
+    container_name: idcard-web
+    ports:
+      - "8443:8080"
+      - "2222:22"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/A-ThyPharoth-db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Hello@123
+      DB_HOST: mysql
+      DB_PORT: "3306"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - appnet
+
   mysql:
-    image: mysql:8.0
+    image: mysql:8
     container_name: idcard-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: idcard_db
+      MYSQL_ROOT_PASSWORD: Hello@123
+      MYSQL_DATABASE: A-ThyPharoth-db
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - idcard-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pHello@123"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - appnet
 
 volumes:
   idcard-mysql-data:
+
+networks:
+  appnet:
+    driver: bridge
